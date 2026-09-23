@@ -1,9 +1,9 @@
 import { Text, View } from 'react-native'
 
-export default function feed() {
+export default function create() {
   return (
     <View>
-      <Text>feed</Text>
+      <Text>create</Text>
     </View>
   )
 }
