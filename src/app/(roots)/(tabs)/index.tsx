@@ -56,7 +56,6 @@ export default function HomeScreen() {
       <FlatList
         data={recommended}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 100 }}
         showsHorizontalScrollIndicator={false}
         ListHeaderComponent={
           <View>
