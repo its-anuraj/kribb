@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Property } from "../Types";
+import { useSavedProperty } from "../hooks/useSavedProperty";
 import { formatPrice } from "../lib/utils";
 
 export default function PropertyCard({
@@ -14,7 +15,12 @@ export default function PropertyCard({
   showSave?: boolean;
 }) {
   const router = useRouter();
-  const isSaved = true;
+
+  const { isSaved, saveLoading, toggleSave } = useSavedProperty(
+    property.id,
+    onUnsave,
+  );
+
   return (
     <TouchableOpacity
       className="flex-row bg-white rounded-2xl mb-4 overflow-hidden"
@@ -26,7 +32,12 @@ export default function PropertyCard({
         elevation: 4,
         opacity: property.is_sold ? 0.5 : 1,
       }}
-      onPress={() => router.push(`/(root)/property/${property.id}`)}
+      onPress={() =>
+        router.push({
+          pathname: "/property/[id]",
+          params: { id: String(property.id) },
+        })
+      }
     >
       <Image
         source={{ uri: property.images[0] }}
@@ -80,7 +91,11 @@ export default function PropertyCard({
         </View>
       </View>
 
-      <TouchableOpacity className="w-10 items-center pr-3">
+      <TouchableOpacity
+        onPress={toggleSave}
+        disabled={saveLoading}
+        className="w-10 items-center pr-3"
+      >
         <Ionicons
           name={isSaved ? "heart" : "heart-outline"}
           size={18}
