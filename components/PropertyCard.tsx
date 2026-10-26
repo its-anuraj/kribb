@@ -17,9 +17,19 @@ export default function PropertyCard({
   const router = useRouter();
 
   const { isSaved, saveLoading, toggleSave } = useSavedProperty(
-    property.id,
+    property?.id ?? "",
+    property,
     onUnsave,
   );
+
+  if (!property || !property.id) {
+    return null;
+  }
+
+  const imageUri =
+    property.images && property.images.length > 0
+      ? property.images[0]
+      : "https://images.unsplash.com/photo-1564013799919-ab600027ffc6";
 
   return (
     <TouchableOpacity
@@ -40,10 +50,11 @@ export default function PropertyCard({
       }
     >
       <Image
-        source={{ uri: property.images[0] }}
+        source={{ uri: imageUri }}
         className="w-28 h-28"
         resizeMode="cover"
       />
+
 
       <View className="flex-1 p-3 justify-between">
         <View>

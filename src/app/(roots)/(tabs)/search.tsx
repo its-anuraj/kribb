@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -18,9 +18,12 @@ import { useFilterStore } from "../../../../store/filterStore";
 import { Property } from "../../../../Types";
 
 export default function searchScreen() {
+
   const [results, setResults] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const requestIdRef = useRef(0);
 
   const { openFilters } = useLocalSearchParams<{
     openFilters?: string;
@@ -52,43 +55,68 @@ export default function searchScreen() {
     maxPrice !== null,
   ].filter(Boolean).length;
 
-  useEffect(() => {
-    fetchResults();
+  const fetchResults = useCallback(async () => {
+    const currentReqId = ++requestIdRef.current;
+    setLoading(true);
+    setError(null);
+
+    try {
+      let query = supabase.from("properties").select("*");
+
+      const trimmedSearch = search ? search.trim() : "";
+      if (trimmedSearch) {
+        query = query.or(
+          `title.ilike.%${trimmedSearch}%,city.ilike.%${trimmedSearch}%`,
+        );
+      }
+
+      if (type) {
+        query = query.eq("type", type);
+      }
+
+      if (bedrooms) {
+        query = query.eq("bedrooms", bedrooms);
+      }
+
+      if (minPrice) {
+        query = query.gte("price", minPrice);
+      }
+
+      if (maxPrice) {
+        query = query.lte("price", maxPrice);
+      }
+
+      const { data, error: qErr } = await query.order("created_at", {
+        ascending: false,
+      });
+
+      if (currentReqId !== requestIdRef.current) return;
+
+      if (qErr) {
+        console.error("Search query error:", qErr);
+        setError(qErr.message || "Failed to search properties.");
+      } else {
+        setResults(data ?? []);
+        setError(null);
+      }
+    } catch (err: any) {
+      if (currentReqId !== requestIdRef.current) return;
+      console.error("Search exception:", err);
+      setError(err?.message || "Network error while searching properties.");
+    } finally {
+      if (currentReqId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
   }, [search, type, bedrooms, minPrice, maxPrice]);
 
-  const fetchResults = async () => {
-    setLoading(true);
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
 
-    let query = supabase.from("properties").select("*");
-
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,city.ilike.%${search}%`);
-    }
-
-    if (type) {
-      query = query.eq("type", type);
-    }
-
-    if (bedrooms) {
-      query = query.eq("bedrooms", bedrooms);
-    }
-
-    if (minPrice) {
-      query = query.gte("price", minPrice);
-    }
-
-    if (maxPrice) {
-      query = query.lte("price", maxPrice);
-    }
-
-    const { data } = await query.order("created_at", { ascending: false });
-
-    setResults(data ?? []);
-    setLoading(false);
-  };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-gray-50">
       <View className="px-5 pt-4 pb-3">
         <Text className="text-2xl font-bold text-gray-900 mb-4">
           Find Property
@@ -214,7 +242,26 @@ export default function searchScreen() {
           </Text>
         }
         ListEmptyComponent={
-          !loading ? (
+          loading ? (
+            <ActivityIndicator size="large" color="#2563EB" className="py-20" />
+          ) : error ? (
+            <View className="items-center py-20 px-6">
+              <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+              <Text className="text-gray-900 font-bold text-base mt-4 mb-2 text-center">
+                Search Failed
+              </Text>
+              <Text className="text-gray-500 text-sm text-center mb-6">
+                {error}
+              </Text>
+              <TouchableOpacity
+                onPress={fetchResults}
+                className="bg-blue-600 px-6 py-2.5 rounded-xl flex-row items-center gap-2"
+              >
+                <Ionicons name="refresh" size={16} color="white" />
+                <Text className="text-white font-semibold text-sm">Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
             <View className="items-center py-20">
               <Ionicons name="search-outline" size={48} color="#D1D5DB" />
               <Text className="text-gray-400 mt-4 text-base">
@@ -224,10 +271,9 @@ export default function searchScreen() {
                 Try a different search or adjust filters
               </Text>
             </View>
-          ) : (
-            <ActivityIndicator size="large" color="#2563EB" className="py-20" />
           )
         }
+
       />
 
       {/* {Filter Modal} */}

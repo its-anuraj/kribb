@@ -1,46 +1,43 @@
 import { useAuth } from "@clerk/expo";
-import { useState } from "react";
+import { useCallback, useEffect } from "react";
+import { Property } from "../Types";
+import { useSavedStore } from "../store/savedStore";
 import { useSupabase } from "./useSupabase";
 
-export function useSavedProperty(propertyId: string, onUnsave?: () => void) {
+export function useSavedProperty(
+  propertyId: string,
+  propertyObj?: Property,
+  onUnsave?: () => void,
+) {
   const { userId } = useAuth();
   const authSupabase = useSupabase();
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [saveLoading, setSaveLoading] = useState(false);
+  const isSaved = useSavedStore((state) =>
+    propertyId ? !!state.savedIds[propertyId] : false,
+  );
+  const saveLoading = useSavedStore((state) =>
+    propertyId ? !!state.loadingIds[propertyId] : false,
+  );
+  const toggleSaveProperty = useSavedStore((state) => state.toggleSaveProperty);
 
-  const checkIfSaved = async () => {
-    if (!userId) return;
-
-    const { data } = await authSupabase
-      .from("saved_properties")
-      .select("id")
-      .eq("user_clerk_id", userId)
-      .eq("property_id", propertyId)
-      .single();
-
-    setIsSaved(!!data);
-  };
-
-  const toggleSave = async () => {
-    if (!userId || saveLoading) return;
-    setSaveLoading(true);
-    if (isSaved) {
-      await authSupabase
-        .from("saved_properties")
-        .delete()
-        .eq("user_clerk_id", userId)
-        .eq("property_id", propertyId);
-      setIsSaved(false);
-      onUnsave?.();
-    } else {
-      await authSupabase
-        .from("saved_properties")
-        .insert({ user_clerk_id: userId, property_id: propertyId });
-      setIsSaved(true);
-    }
-    setSaveLoading(false);
-  };
+  const toggleSave = useCallback(async () => {
+    if (!userId || !propertyId) return;
+    await toggleSaveProperty(
+      authSupabase,
+      userId,
+      propertyId,
+      propertyObj,
+      onUnsave,
+    );
+  }, [
+    userId,
+    authSupabase,
+    propertyId,
+    propertyObj,
+    onUnsave,
+    toggleSaveProperty,
+  ]);
 
   return { isSaved, saveLoading, toggleSave };
 }
+

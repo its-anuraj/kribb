@@ -84,7 +84,7 @@ export default function profileScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white mb-10">
+    <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-white">
       {/* Avatar + Name */}
       <View className="items-center py-8">
         <View className="relative">

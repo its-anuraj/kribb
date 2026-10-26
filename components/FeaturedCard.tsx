@@ -2,10 +2,25 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Property } from "../Types";
+import { useSavedProperty } from "../hooks/useSavedProperty";
 import { formatPrice } from "../lib/utils";
 
 export default function FeaturedCard({ property }: { property: Property }) {
   const router = useRouter();
+  const { isSaved, saveLoading, toggleSave } = useSavedProperty(
+    property?.id ?? "",
+    property,
+  );
+
+  if (!property || !property.id) {
+    return null;
+  }
+
+  const imageUri =
+    property.images && property.images.length > 0
+      ? property.images[0]
+      : "https://images.unsplash.com/photo-1564013799919-ab600027ffc6";
+
   return (
     <TouchableOpacity
       className="w-72 mr-2 rounded-3xl overflow-hidden bg-white"
@@ -25,10 +40,11 @@ export default function FeaturedCard({ property }: { property: Property }) {
       }
     >
       <Image
-        source={{ uri: property.images[0] }}
+        source={{ uri: imageUri }}
         className="w-full h-44"
         resizeMode="cover"
       />
+
 
       <View className="absolute top-3 left-3 bg-white/90 px-3 py-1 rounded-full">
         <Text className="text-xs font-semibold text-blue-600 capitalize">
@@ -42,6 +58,27 @@ export default function FeaturedCard({ property }: { property: Property }) {
           <Text className="text-xs font-semibold text-white">sold</Text>
         </View>
       )}
+
+      {/* Heart Save Button */}
+      <TouchableOpacity
+        onPress={toggleSave}
+        disabled={saveLoading}
+        activeOpacity={0.8}
+        className={`absolute top-3 ${property.is_sold ? "right-16" : "right-3"} w-8 h-8 bg-white/90 rounded-full items-center justify-center`}
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.12,
+          shadowRadius: 3,
+          elevation: 2,
+        }}
+      >
+        <Ionicons
+          name={isSaved ? "heart" : "heart-outline"}
+          size={18}
+          color={isSaved ? "#ef4444" : "#374151"}
+        />
+      </TouchableOpacity>
 
       <View className="p-4">
         <Text

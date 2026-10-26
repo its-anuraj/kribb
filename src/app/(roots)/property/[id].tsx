@@ -1,8 +1,9 @@
 import { useAuth } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
@@ -26,48 +27,162 @@ import { formatPrice } from "../../../../lib/utils";
 import { useUserStore } from "../../../../store/userStore";
 import { Property } from "../../../../Types";
 
+import { useRef } from "react";
+
 export default function PropertyDetails() {
   const { width } = Dimensions.get("window");
   const ADMIN_PHONE = "916397193704";
 
   const { id } = useLocalSearchParams<{ id: string }>();
+  const propertyId = Array.isArray(id) ? id[0] : id;
   const { userId } = useAuth();
   const router = useRouter();
   const isAdmin = useUserStore((state) => state.isAdmin);
 
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
-  const { isSaved, saveLoading, toggleSave } = useSavedProperty(id ?? "");
+
+  const { isSaved, saveLoading, toggleSave } = useSavedProperty(
+    propertyId ?? "",
+    property ?? undefined,
+  );
   const authSupabase = useSupabase();
+  const requestIdRef = useRef(0);
 
-  const fetchProperty = async () => {
-    const { data } = await supabase
-      .from("properties")
-      .select("*")
-      .eq("id", id)
-      .single();
+  const fetchProperty = useCallback(async () => {
+    if (!propertyId) {
+      setProperty(null);
+      setError("Property ID is missing.");
+      setLoading(false);
+      return;
+    }
 
-    setProperty(data);
-    setLoading(false);
-  };
+    const currentReqId = ++requestIdRef.current;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: queryError } = await supabase
+        .from("properties")
+        .select("*")
+        .eq("id", propertyId)
+        .maybeSingle();
+
+      if (currentReqId !== requestIdRef.current) return;
+
+      if (queryError) {
+        setError(queryError.message || "Failed to load property details.");
+        setProperty(null);
+      } else if (!data) {
+        // Genuine not found
+        setProperty(null);
+        setError(null);
+      } else {
+        setProperty(data);
+        setError(null);
+      }
+    } catch (err: any) {
+      if (currentReqId !== requestIdRef.current) return;
+      console.error("fetchProperty error:", err);
+      setError(err?.message || "Network error while loading property details.");
+      setProperty(null);
+    } finally {
+      if (currentReqId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [propertyId]);
 
   useEffect(() => {
     fetchProperty();
-  }, [id]);
+  }, [fetchProperty]);
+
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const index = Math.round(e.nativeEvent.contentOffset.x / width);
     setActiveIndex(index);
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="px-4 pt-2">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={20} color="#111827" />
+          </TouchableOpacity>
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="px-4 pt-2">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={20} color="#111827" />
+          </TouchableOpacity>
+        </View>
+        <View className="flex-1 items-center justify-center px-6">
+          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+          <Text className="text-gray-900 font-bold text-lg mt-4 mb-2 text-center">
+            Unable to load property
+          </Text>
+          <Text className="text-gray-500 text-sm text-center mb-6">
+            {error}
+          </Text>
+          <TouchableOpacity
+            onPress={fetchProperty}
+            className="bg-blue-600 px-6 py-3 rounded-2xl flex-row items-center gap-2"
+          >
+            <Ionicons name="refresh" size={18} color="white" />
+            <Text className="text-white font-semibold text-sm">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!property) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <Text className="text-gray-500">Property not found</Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="px-4 pt-2">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+          >
+            <Ionicons name="arrow-back" size={20} color="#111827" />
+          </TouchableOpacity>
+        </View>
+        <View className="flex-1 items-center justify-center px-6">
+          <Ionicons name="home-outline" size={48} color="#9CA3AF" />
+          <Text className="text-gray-900 font-bold text-lg mt-4 mb-2 text-center">
+            Property Not Found
+          </Text>
+          <Text className="text-gray-500 text-sm text-center mb-6">
+            The property you are looking for does not exist or has been removed.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="bg-blue-600 px-6 py-3 rounded-2xl"
+          >
+            <Text className="text-white font-semibold text-sm">Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -98,7 +213,8 @@ export default function PropertyDetails() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
-          await authSupabase.from("properties").delete().eq("id", id);
+          if (!propertyId) return;
+          await authSupabase.from("properties").delete().eq("id", propertyId);
           router.replace("/(roots)/(tabs)");
         },
       },
@@ -111,10 +227,11 @@ export default function PropertyDetails() {
       {
         text: "Mark Sold",
         onPress: async () => {
+          if (!propertyId) return;
           await authSupabase
             .from("properties")
             .update({ is_sold: true })
-            .eq("id", id);
+            .eq("id", propertyId);
           setProperty((prev) => (prev ? { ...prev, is_sold: true } : prev));
         },
       },
@@ -127,7 +244,7 @@ export default function PropertyDetails() {
         <View>
           <View style={{ opacity: property.is_sold ? 0.5 : 1 }}>
             <FlatList
-              data={property.images}
+              data={property.images ?? []}
               keyExtractor={(_, i) => i.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity onPress={() => setImageViewerVisible(true)}>
@@ -148,9 +265,10 @@ export default function PropertyDetails() {
 
           <View className="absolute bottom-3 right-4 bg-black/50 px-3 py-1 rounded-full">
             <Text className="text-white text-xs font-medium">
-              {activeIndex + 1}/{property.images.length}
+              {activeIndex + 1}/{(property.images ?? []).length || 1}
             </Text>
           </View>
+
 
           <SafeAreaView className="absolute top-0 left-0 right-0">
             <View className="flex-row items-center justify-between px-4 pt-2">
@@ -167,11 +285,15 @@ export default function PropertyDetails() {
                 className="w-10 h-10 bg-white rounded-full items-center justify-center"
                 style={{ elevation: 3 }}
               >
-                <Ionicons
-                  name={isSaved ? "heart" : "heart-outline"}
-                  size={20}
-                  color={isSaved ? "#EF4444" : "#111827"}
-                />
+                {saveLoading ? (
+                  <ActivityIndicator size="small" color="#EF4444" />
+                ) : (
+                  <Ionicons
+                    name={isSaved ? "heart" : "heart-outline"}
+                    size={20}
+                    color={isSaved ? "#EF4444" : "#111827"}
+                  />
+                )}
               </TouchableOpacity>
             </View>
           </SafeAreaView>
@@ -324,7 +446,7 @@ export default function PropertyDetails() {
       </ScrollView>
 
       <ImageViewing
-        images={property.images.map((uri) => ({ uri }))}
+        images={(property.images ?? []).map((uri) => ({ uri }))}
         imageIndex={activeIndex}
         visible={imageViewerVisible}
         onRequestClose={() => setImageViewerVisible(false)}

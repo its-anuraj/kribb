@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,97 +12,126 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import PropertyCard from "../../../../components/PropertyCard";
 import { useSupabase } from "../../../../hooks/useSupabase";
-import { Property } from "../../../../Types";
+import { useSavedStore } from "../../../../store/savedStore";
 
-interface SavedProperty {
-  id: string;
-  property_id: string;
-  properties: Property;
-}
+import { RefreshControl } from "react-native";
 
 export default function SavedScreen() {
-  const { userId } = useAuth();
+  const { userId, isSignedIn, isLoaded } = useAuth();
   const authSupabase = useSupabase();
   const router = useRouter();
 
-  const [saved, setSaved] = useState<SavedProperty[]>([]);
-  const [loading, setLoading] = useState(true);
+  const savedItems = useSavedStore((state) => state.savedItems);
+  const isFetching = useSavedStore((state) => state.isFetching);
+  const hasInitialized = useSavedStore((state) => state.hasInitialized);
+  const authError = useSavedStore((state) => state.authError);
 
-  const fetchSaved = useCallback(async () => {
-    if (!userId) return;
-    setLoading(true);
-    const { data } = await authSupabase
-      .from("saved_properties")
-      .select("id, property_id, properties(*)")
-      .eq("user_clerk_id", userId)
-      .order("id", { ascending: false });
-
-    setSaved((data as unknown as SavedProperty[]) ?? []);
-    setLoading(false);
-  }, [userId]);
-
-  // Refresh every time the tab comes into focus
+  // Refresh when the tab comes into focus and auth is ready
   useFocusEffect(
     useCallback(() => {
-      fetchSaved();
-    }, [fetchSaved]),
+      if (isLoaded && isSignedIn && userId) {
+        useSavedStore.getState().fetchSavedProperties(authSupabase, userId);
+      }
+    }, [isLoaded, isSignedIn, userId, authSupabase]),
   );
 
+  const showLoading = !hasInitialized && isFetching;
+
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-gray-50">
       {/* Header */}
       <View className="px-5 pt-4 pb-3">
         <Text className="text-2xl font-bold text-gray-900">Saved</Text>
-        {!loading && (
+        {!showLoading && (
           <Text className="text-sm text-gray-400 mt-1">
-            {saved.length} {saved.length === 1 ? "property" : "properties"}{" "}
-            saved
+            {savedItems.length}{" "}
+            {savedItems.length === 1 ? "property" : "properties"} saved
           </Text>
         )}
       </View>
 
-      {loading ? (
+      {showLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#2563EB" />
         </View>
       ) : (
         <FlatList
-          data={saved}
-          keyExtractor={(item) => item.id}
+          data={savedItems}
+          keyExtractor={(item) => item.property_id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <PropertyCard
-              property={item.properties}
-              onUnsave={() =>
-                setSaved((prev) => prev.filter((s) => s.id !== item.id))
-              }
-              showSave
+          refreshControl={
+            <RefreshControl
+              refreshing={isFetching && hasInitialized}
+              onRefresh={() => {
+                if (userId) {
+                  useSavedStore
+                    .getState()
+                    .fetchSavedProperties(authSupabase, userId, true);
+                }
+              }}
+              colors={["#2563EB"]}
+              tintColor="#2563EB"
             />
+          }
+          renderItem={({ item }) => (
+            <PropertyCard property={item.properties} showSave />
           )}
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-24">
-              <View className="w-20 h-20 bg-red-50 rounded-full items-center justify-center mb-4">
-                <Ionicons name="heart-outline" size={36} color="#EF4444" />
-              </View>
-              <Text className="text-gray-700 text-lg font-bold mb-1">
-                No saved properties
-              </Text>
-              <Text className="text-gray-400 text-sm text-center px-8">
-                Tap the heart icon on any property to save it here
-              </Text>
-              <TouchableOpacity
-                onPress={() => router.push("/(roots)/(tabs)/search")}
-                className="mt-6 bg-blue-600 px-6 py-3 rounded-2xl"
-              >
-                <Text className="text-white font-semibold">
-                  Browse Properties
+            authError ? (
+              <View className="flex-1 items-center justify-center py-20 px-6">
+                <View className="w-20 h-20 bg-amber-50 rounded-full items-center justify-center mb-4">
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={36}
+                    color="#D97706"
+                  />
+                </View>
+                <Text className="text-gray-900 text-lg font-bold mb-1 text-center">
+                  Authentication Issue
                 </Text>
-              </TouchableOpacity>
-            </View>
+                <Text className="text-gray-500 text-sm text-center px-4 mb-6">
+                  {authError}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (userId) {
+                      useSavedStore
+                        .getState()
+                        .fetchSavedProperties(authSupabase, userId, true);
+                    }
+                  }}
+                  className="bg-blue-600 px-6 py-3 rounded-2xl flex-row items-center gap-2"
+                >
+                  <Ionicons name="refresh" size={16} color="white" />
+                  <Text className="text-white font-semibold">Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View className="flex-1 items-center justify-center py-24">
+                <View className="w-20 h-20 bg-red-50 rounded-full items-center justify-center mb-4">
+                  <Ionicons name="heart-outline" size={36} color="#EF4444" />
+                </View>
+                <Text className="text-gray-700 text-lg font-bold mb-1">
+                  No saved properties
+                </Text>
+                <Text className="text-gray-400 text-sm text-center px-8">
+                  Tap the heart icon on any property to save it here
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(roots)/(tabs)/search")}
+                  className="mt-6 bg-blue-600 px-6 py-3 rounded-2xl"
+                >
+                  <Text className="text-white font-semibold">
+                    Browse Properties
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )
           }
         />
       )}
     </SafeAreaView>
   );
 }
+

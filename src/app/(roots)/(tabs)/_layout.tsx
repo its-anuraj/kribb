@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Label, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import { NativeTabs } from "expo-router/build/native-tabs";
 import { Platform } from "react-native";
 import { useUserStore } from "../../../../store/userStore";
@@ -21,8 +21,8 @@ function IOSTabs() {
 
       {isAdmin && (
         <NativeTabs.Trigger name="create">
-          <Icon md="add_home" />
-          <Label>Add property</Label>
+          <NativeTabs.Trigger.Icon md="add_home" />
+          <NativeTabs.Trigger.Label>Add property</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
       )}
 
