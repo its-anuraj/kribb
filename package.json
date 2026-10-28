@@ -56,5 +56,13 @@
     "web": "expo start --web",
     "lint": "expo lint"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "install": {
+      "exclude": [
+        "typescript",
+        "@react-native-async-storage/async-storage"
+      ]
+    }
+  }
 }

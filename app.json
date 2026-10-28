@@ -4,7 +4,7 @@
     "slug": "kribb",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/kribb.png",
+    "icon": "./assets/images/kribb-icon.png",
     "scheme": "kribb",
     "userInterfaceStyle": "automatic",
     "ios": {
