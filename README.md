@@ -13,12 +13,6 @@
     <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
   </p>
 
-  <p>
-    <a href="#-download-android-apk--testing"><b>📲 Download Android APK</b></a> •
-    <a href="#-video-demo--commercial"><b>🎬 Watch Commercial Demo</b></a> •
-    <a href="#-key-features"><b>✨ Explore Features</b></a> •
-    <a href="#-engineering-highlights--what-i-learned"><b>🧠 Engineering Learnings</b></a>
-  </p>
 </div>
 
 ---
