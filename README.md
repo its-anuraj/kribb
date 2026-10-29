@@ -12,6 +12,13 @@
     <a href="https://nativewind.dev"><img src="https://img.shields.io/badge/NativeWind-v4_Tailwind-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="NativeWind" /></a>
     <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
   </p>
+
+  <p>
+    <a href="#-download-android-apk--testing"><b>📲 Download Android APK</b></a> •
+    <a href="#-video-demo--commercial"><b>🎬 Watch Commercial Demo</b></a> •
+    <a href="#-key-features"><b>✨ Explore Features</b></a> •
+    <a href="#-engineering-highlights--what-i-learned"><b>🧠 Engineering Learnings</b></a>
+  </p>
 </div>
 
 ---
@@ -19,6 +26,8 @@
 ## 📌 Table of Contents
 
 - [Overview](#-overview)
+- [Download Android APK & Testing](#-download-android-apk--testing)
+- [Video Demo & Commercial](#-video-demo--commercial)
 - [Key Features](#-key-features)
 - [Tech Stack Architecture](#-tech-stack-architecture)
 - [Project Architecture & Directory Structure](#-project-architecture--directory-structure)
@@ -39,6 +48,28 @@
 **Kribb** is a production-ready mobile application designed to simplify buying, renting, and listing real estate properties. Built with cutting-edge mobile architecture—featuring **React 19 with the experimental React Compiler**, **Expo SDK 57**, **NativeWind v4** for Tailwind styling, **Clerk** for modern authentication, and **Supabase** for relational data persistence, Row-Level Security (RLS), and media storage.
 
 From interactive map coordinates to multi-photo uploads and optimistic wishlist toggles, Kribb is designed with attention to mobile UX, offline tolerance, and performance.
+
+---
+
+## 📲 Download Android APK & Testing
+
+Want to test Kribb directly on your Android phone? You don't need to set up a development environment!
+
+> [!TIP]
+> **Direct Download Link:** [Download Kribb Android APK](https://github.com/its-anuraj/kribb/releases) *(or replace with your Google Drive / Cloud storage link)*
+
+### Quick Install Guide:
+1. Download the `.apk` file onto your Android device.
+2. Open the downloaded file and tap **Install** (if prompted, enable *"Install from unknown sources"* in your device settings).
+3. Launch **Kribb**, sign in / sign up, and start exploring luxury properties!
+
+---
+
+## 🎬 Video Demo & Commercial
+
+Check out the 3D Apple-style animated commercial showcase highlighting Kribb's UI, features, and fluidity:
+
+> **[🎥 Watch Full App Commercial & Walkthrough Video](#)** *(Add your YouTube/Drive/Loom video link here)*
 
 ---
 

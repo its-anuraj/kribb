@@ -44,3 +44,26 @@ example
 # generated native folders
 /ios
 /android
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# AI & Assistant Configs
+.claude/
+CLAUDE.md
+
+# Windows & OS metadata
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# EAS & Build Artifacts
+.eas/
+*.aab
+*.log
