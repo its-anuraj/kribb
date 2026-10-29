@@ -57,13 +57,6 @@ Want to test Kribb directly on your Android phone? You don't need to set up a de
 2. Open the downloaded file and tap **Install** (if prompted, enable *"Install from unknown sources"* in your device settings).
 3. Launch **Kribb**, sign in / sign up, and start exploring luxury properties!
 
----
-
-## 🎬 Video Demo & Commercial
-
-Check out the 3D Apple-style animated commercial showcase highlighting Kribb's UI, features, and fluidity:
-
-> **[🎥 Watch Full App Commercial & Walkthrough Video](#)** *(Add your YouTube/Drive/Loom video link here)*
 
 ---
 
